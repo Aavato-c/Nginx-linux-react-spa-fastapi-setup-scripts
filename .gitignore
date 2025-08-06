@@ -1,0 +1,8 @@
+.timetracker
+venv
+*notes.md
+waiting
+__pycache__
+generated_configs/*
+launch.json
+.env.scripts
