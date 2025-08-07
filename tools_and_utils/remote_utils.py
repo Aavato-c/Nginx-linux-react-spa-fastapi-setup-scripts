@@ -8,17 +8,7 @@ from typing import Optional
 import subprocess
 import paramiko
 
-from tools_and_utils.consts import (
-    APP_CONFIGS_FOLDER,
-    DESTINATION_DIR,
-    DESTINATION_DIR_FINAL_CONFIG, 
-    DESTINATION_DIR_IP_FOR_FINAL_CONFIGS, 
-    SSH_COMMAND_PREFIX, 
-    SSH_KEY_PATH, 
-    SUPERVISOR_SERVER_PROCESS_NAME, 
-    VPS_IP,
-    VPS_PORT, 
-    VPS_USER_NAME)
+from tools_and_utils.consts import CONFIG
 
 
 
@@ -38,8 +28,8 @@ def rsync_configs_to_server():
     ]
 
     # Ensure the destination directory exists on the VPS
-    execute_cmd_on_vps(f"{SSH_COMMAND_PREFIX}mkdir -p {DESTINATION_DIR_FINAL_CONFIG}")
-    execute_cmd_on_vps(f"{SSH_COMMAND_PREFIX}chown -R {VPS_USER_NAME}:{VPS_USER_NAME} {DESTINATION_DIR_FINAL_CONFIG}")
+    execute_cmd_on_vps(f"{CONFIG.ssh_command_prefix}mkdir -p {CONFIG.destination_dir_ip_for_final_configs}")
+    execute_cmd_on_vps(f"{CONFIG.ssh_command_prefix}chown -R {CONFIG.vps_user_name}:{CONFIG.vps_user_name} {CONFIG.destination_dir_ip_for_final_configs}")
 
     # Upload the file to the VPS
     try:
@@ -47,12 +37,12 @@ def rsync_configs_to_server():
             "rsync", 
             "-av", 
         ] + exclude_patterns + [
-            f"{APP_CONFIGS_FOLDER}/", 
-            f"{DESTINATION_DIR_IP_FOR_FINAL_CONFIGS}/"
+            f"{CONFIG.path_local_app_config_folder}/", 
+            f"{CONFIG.destination_dir_ip_for_final_configs}/"
             ]
-        if " " in APP_CONFIGS_FOLDER:
+        if " " in CONFIG.path_local_app_config_folder:
             # Handle spaces in the path
-            args[3] = f"'{APP_CONFIGS_FOLDER}'"
+            args[3] = f"'{CONFIG.path_local_app_config_folder}'"
         res = subprocess.run(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout = res.stdout.decode()
         stderr = res.stderr.decode()
@@ -71,11 +61,10 @@ def rsync_configs_to_server():
         raise e
 
 def execute_cmd_on_vps(cmd: str,
-                                vps_user_name: str = VPS_USER_NAME,
-                                vps_ip: str = VPS_IP,
-                                vps_port: int = VPS_PORT,
-                                ssh_key_path: str = SSH_KEY_PATH,
-                                ssh_command_prefix: str = SSH_COMMAND_PREFIX
+                                vps_user_name: str = CONFIG.vps_user_name,
+                                vps_ip: str = CONFIG.vps_ip,
+                                vps_port: int = CONFIG.vps_port,
+                                ssh_key_path: str = CONFIG.ssh_key_path,
                                 ) -> str:
     """
     Create directories on the VPS if they do not exist.
@@ -112,24 +101,24 @@ def execute_cmd_on_vps(cmd: str,
     finally:
         ssh.close()
 
-def reload_configs_on_vps(pass_for_user: Optional[str] = None):
+def reload_configs_on_vps():
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.load_system_host_keys()
     commands_to_run = [
-        f"{SSH_COMMAND_PREFIX}supervisorctl stop {SUPERVISOR_SERVER_PROCESS_NAME}",
-        f"{SSH_COMMAND_PREFIX}supervisorctl reload",
-        f"{SSH_COMMAND_PREFIX}supervisorctl start {SUPERVISOR_SERVER_PROCESS_NAME}",
-        f"{SSH_COMMAND_PREFIX}systemctl restart nginx",
+        f"{CONFIG.ssh_command_prefix}supervisorctl stop {CONFIG.name_server_supervisor_process}",
+        f"{CONFIG.ssh_command_prefix}supervisorctl reload",
+        f"{CONFIG.ssh_command_prefix}supervisorctl start {CONFIG.name_server_supervisor_process}",
+        f"{CONFIG.ssh_command_prefix}systemctl restart nginx",
     ]
     
-    key = paramiko.Ed25519Key.from_private_key_file(SSH_KEY_PATH)
-    ssh.connect(VPS_IP, port=22, username=VPS_USER_NAME, pkey=key)
+    key = paramiko.Ed25519Key.from_private_key_file(CONFIG.ssh_key_path)
+    ssh.connect(CONFIG.vps_ip, port=CONFIG.vps_port, username=CONFIG.vps_user_name, pkey=key)
     try:
         result_string = ""
         for command in commands_to_run:
             stdin, stdout, stderr = ssh.exec_command(command)
-            result_string += f"\n\nCommand: {command.replace(SSH_COMMAND_PREFIX, '')}\nStdout: {stdout.read().decode()}\nStderr: {stderr.read().decode()}"
+            result_string += f"\n\nCommand: {command.replace(CONFIG.ssh_command_prefix, '')}\nStdout: {stdout.read().decode()}\nStderr: {stderr.read().decode()}"
     finally:
         result_string = result_string if result_string else "No commands run"
         ssh.close()
@@ -140,16 +129,16 @@ def stop_program():
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.load_system_host_keys()
-    key = paramiko.Ed25519Key.from_private_key_file(SSH_KEY_PATH)
-    ssh.connect(VPS_IP, port=22, username=VPS_USER_NAME, pkey=key)
+    key = paramiko.Ed25519Key.from_private_key_file(CONFIG.ssh_key_path)
+    ssh.connect(CONFIG.vps_ip, port=CONFIG.vps_port, username=CONFIG.vps_user_name, pkey=key)
     try:
         commands_to_run = [
-            f"{SSH_COMMAND_PREFIX}supervisorctl stop {SUPERVISOR_SERVER_PROCESS_NAME}",
+            f"{CONFIG.ssh_command_prefix}supervisorctl stop {CONFIG.name_server_supervisor_process}",
         ]
         result_string = ""
         for command in commands_to_run:
             stdin, stdout, stderr = ssh.exec_command(command)
-            result_string += f"\n\nCommand: {command.replace(SSH_COMMAND_PREFIX, '')}\nStdout: {stdout.read().decode()}\nStderr: {stderr.read().decode()}"
+            result_string += f"\n\nCommand: {command.replace(CONFIG.ssh_command_prefix, '')}\nStdout: {stdout.read().decode()}\nStderr: {stderr.read().decode()}"
     finally:
         try:
             result_string = result_string if result_string else "No commands run"

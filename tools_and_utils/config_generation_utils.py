@@ -3,30 +3,11 @@ import sys
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__)).split("tools_and_utils")[0]
 sys.path.append(ROOT_DIR)
 
-from tools_and_utils.consts import (API_ENTRY_POINT, 
-                    GUNICORN_PROCESS_NAME, 
-                    GUNICORN_PROCESS_WORKERS, 
-                    GUNICORN_START_SCRIPT_SAVE_PATH,
-                    GUNICORN_START_SCRIPT_VPS_PATH, 
-                    LOG_LEVEL, 
-                    NAME_OF_NGINX_UPSTREAM, 
-                    NGINX_API_CONFIG_SAVE_PATH, 
-                    NGINX_SPA_CONFIG_SAVE_PATH, 
-                    SERVER_DOMAIN_TLD_API, 
-                    SERVER_DOMAIN_TLD_SPA, 
-                    SUPERVISOR_CONFIG_SAVE_PATH, 
-                    SUPERVISOR_SERVER_PROCESS_NAME, 
-                    UNIX_SOCKET_PATH, 
-                    UVICORN_WORKER_CLASS, 
-                    VPS_LOCATION_OF_API, 
-                    VPS_LOCATION_OF_SPA, 
-                    VPS_LOG_DIR, 
-                    VPS_USER_NAME)
-
+from tools_and_utils.consts import CONFIG
 
 def write_nginx_config_for_react_router(
-    log_dir: str = VPS_LOG_DIR,
-    save_path: str = NGINX_SPA_CONFIG_SAVE_PATH,
+    log_dir: str = path_server_log_dir,
+    save_path: str = filepath_local_nginx_spa_config,
     server_domain_tld: str = SERVER_DOMAIN_TLD_SPA,
     dir_of_spa: str = VPS_LOCATION_OF_SPA  # e.g., "/usr/share/nginx/frontend-app" or "/var/www/html"
     ):
@@ -55,8 +36,8 @@ def write_nginx_config(
         nginx_upstream_name: str = NAME_OF_NGINX_UPSTREAM, 
         nginx_socket_path: str = UNIX_SOCKET_PATH,
         server_domain_tld: str = SERVER_DOMAIN_TLD_API,
-        log_dir_name: str = VPS_LOG_DIR,
-        save_path: str = NGINX_API_CONFIG_SAVE_PATH
+        log_dir_name: str = path_server_log_dir,
+        save_path: str = filepath_local_nginx_api_config
         ):
     nginx_config = f"""\
 upstream {nginx_upstream_name} {{
@@ -99,12 +80,11 @@ server {{
         f.write(nginx_config)
 
 def write_supervisor_config(
-        supervisor_process_name: str = SUPERVISOR_SERVER_PROCESS_NAME,
-        gunicorn_start_script_path: str = GUNICORN_START_SCRIPT_VPS_PATH,
-        save_path: str = SUPERVISOR_CONFIG_SAVE_PATH,
-        log_dir: str = VPS_LOG_DIR,
-        log_file_name: str = "supervisor.log",
-        user_name_for_process: str = VPS_USER_NAME,
+        supervisor_process_name: str = CONFIG.name_server_supervisor_process,
+        gunicorn_start_script_path: str = CONFIG.filepath_server_gunicorn_start_script,
+        save_path: str = CONFIG.filepath_local_supervisor_config,
+        log_dir: str = CONFIG.path_server_log_dir,
+        user_name_for_process: str = CONFIG.vps_user_name,
         ):
     supervisor_config = f"""\
 [program:{supervisor_process_name}]
@@ -113,31 +93,30 @@ def write_supervisor_config(
     autostart=true
     autorestart=true
     redirect_stderr=true
-    stdout_logfile={log_dir}/{log_file_name}
+    
+    stdout_logfile={log_dir}/{supervisor_process_name}.log
     stdout_logfile_maxbytes=50MB
     stdout_logfile_backups=10
-    stderr_logfile={log_dir}/error_{log_file_name}
+    
+    stderr_logfile={log_dir}/{supervisor_process_name}_error.log
     stderr_logfile_maxbytes=50MB
     stderr_logfile_backups=10
 """
-    if not os.path.exists(os.path.dirname(save_path)):
-        input(f"Directory {os.path.dirname(save_path)} does not exist. Will we create it? Press Enter to continue or Ctrl+C to exit.")
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     with open(save_path, "w") as f:
         f.write(supervisor_config)
 
 def write_gunicorn_start_script(
-        directory_of_app: str = VPS_LOCATION_OF_API,
-        log_dir: str = VPS_LOG_DIR,
-        log_file_name: str = f"{GUNICORN_PROCESS_NAME}.log",
-        nginx_socket_path: str = UNIX_SOCKET_PATH,
-        user_name: str = VPS_USER_NAME,
-        name_of_server_program: str = GUNICORN_PROCESS_NAME,
-        num_of_workers: int = GUNICORN_PROCESS_WORKERS,
-        save_path_for_script: str = GUNICORN_START_SCRIPT_SAVE_PATH,
-        uvicorn_worker_class: str = UVICORN_WORKER_CLASS,
-        log_level: str = LOG_LEVEL,
-        main_entry_point: str = API_ENTRY_POINT,  # e.g., "app.main:app"
+        directory_of_app: str = CONFIG.vps_location_of_api,
+        log_dir: str = CONFIG.path_server_log_dir,
+        log_file_name: str = f"{CONFIG.name_server_gunicorn_process}.log",
+        nginx_socket_path: str = CONFIG.unix_socket_path,
+        user_name: str = CONFIG.vps_user_name,
+        name_of_server_program: str = CONFIG.name_server_gunicorn_process,
+        num_of_workers: int = CONFIG.gunicorn_process_workers,
+        save_path_for_script: str = CONFIG.filepath_local_gunicorn_start_script,
+        uvicorn_worker_class: str = CONFIG.uvicorn_worker_class,
+        log_level: str = CONFIG.log_level,
+        main_entry_point: str = CONFIG.api_entry_point,  # e.g., "app.main:app"
         ):
 
     gunicorn_start_script = f"""#!/bin/sh
@@ -171,11 +150,67 @@ def chmod_to_executable(file_path: str):
         raise e
 
 def create_server_init_script(
-        save_path: str = os.path.join(ROOT_DIR, "server_init.sh"),
+        save_path: str = CONFIG.filepath_local_server_init_script
     ):
     init_script = f"""\
 #!/bin/bash
+
+sudo apt update && sudo apt upgrade -y
+
+# Install basic utils
+sudo apt install -y curl git nginx
+
+
+# Install supervisor if not installed
+if ! command -v supervisorctl &> /dev/null
+then
+    echo "Installing supervisor"
+    sudo apt install supervisor
+else
+    #TODO
+fi
+
+
+# Install homebrew if not already installed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    # Adding it to path
+    test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
+    test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    echo "eval \"\$($(brew --prefix)/bin/brew shellenv)\"" >> ~/.bashrc
 """
+    with open(save_path, "w") as f:
+        f.write(init_script)
+
+def create_server_app_initiation_script(
+        save_path: os.PathLike = CONFIG.filepath_local_server_startup_script
+    ):
+    startup_script = f"""\
+#!bin/bash
+
+curr_dir=$(pwd)
+this_file_path=$(realpath "$0")
+cd "$(dirname "$this_file_path")" || exit 1
+
+CONFIG_FOLDER="{CONFIG.path_local_app_config_folder}"
+NAME_OF_SERVER_PROGRAM="{CONFIG.name_server_gunicorn_process}"
+SUPERVISOR_CONFIG_PATH="{CONFIG.path_server_supervisor_config}"
+basename_supervisor_config="{CONFIG.basename_supervisor_config}"
+GUNICORN_START_SCRIPT_PATH="{CONFIG.filepath_server_gunicorn_start_script}"
+
+sudo chmod +x $GUNICORN_START_SCRIPT_PATH
+sudo ln -s $SUPERVISOR_CONFIG_PATH {CONFIG.filepath_server_supervisor_linked}
+
+# Start supervisor
+sudo service supervisor start
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start $NAME_OF_SERVER_PROGRAM
+sudo supervisorctl status $NAME_OF_SERVER_PROGRAM    
+"""
+    with open(save_path, "w") as f:
+        f.write(startup_script)
+    
+        
 if __name__ == "__main__":
     write_nginx_config()
     write_supervisor_config()
