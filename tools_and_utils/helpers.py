@@ -8,19 +8,7 @@ import re
 import unicodedata
 
 
-def raise_or_get_env_var(var_name: str, default_value: str = None) -> str:
-    value = os.getenv(var_name)
-    if not value or value == "":
-        if default_value is not None:
-            return default_value
-        else:
-            raise ValueError(f"{var_name} is not set in the environment variables.")
-    if "<--" in value:
-        if default_value is not None:
-            return default_value
-        else:
-            raise ValueError(f"{var_name} is not set in the environment variables. Please set it to a valid value.")
-    return value
+
 
 def pythify_str(string: str) -> str:
     value = str(string)
