@@ -6,7 +6,8 @@ sys.path.append(ROOT_DIR)
 from tools_and_utils.consts import (API_ENTRY_POINT, 
                     GUNICORN_PROCESS_NAME, 
                     GUNICORN_PROCESS_WORKERS, 
-                    GUNICORN_START_SCRIPT_PATH, 
+                    GUNICORN_START_SCRIPT_SAVE_PATH,
+                    GUNICORN_START_SCRIPT_VPS_PATH, 
                     LOG_LEVEL, 
                     NAME_OF_NGINX_UPSTREAM, 
                     NGINX_API_CONFIG_SAVE_PATH, 
@@ -99,7 +100,7 @@ server {{
 
 def write_supervisor_config(
         supervisor_process_name: str = SUPERVISOR_SERVER_PROCESS_NAME,
-        gunicorn_start_script_path: str = GUNICORN_START_SCRIPT_PATH,
+        gunicorn_start_script_path: str = GUNICORN_START_SCRIPT_VPS_PATH,
         save_path: str = SUPERVISOR_CONFIG_SAVE_PATH,
         log_dir: str = VPS_LOG_DIR,
         log_file_name: str = "supervisor.log",
@@ -133,7 +134,7 @@ def write_gunicorn_start_script(
         user_name: str = VPS_USER_NAME,
         name_of_server_program: str = GUNICORN_PROCESS_NAME,
         num_of_workers: int = GUNICORN_PROCESS_WORKERS,
-        save_path_for_script: str = GUNICORN_START_SCRIPT_PATH,
+        save_path_for_script: str = GUNICORN_START_SCRIPT_SAVE_PATH,
         uvicorn_worker_class: str = UVICORN_WORKER_CLASS,
         log_level: str = LOG_LEVEL,
         main_entry_point: str = API_ENTRY_POINT,  # e.g., "app.main:app"
@@ -169,6 +170,12 @@ def chmod_to_executable(file_path: str):
         print(f"Error making file {file_path} executable: {e}")
         raise e
 
+def create_server_init_script(
+        save_path: str = os.path.join(ROOT_DIR, "server_init.sh"),
+    ):
+    init_script = f"""\
+#!/bin/bash
+"""
 if __name__ == "__main__":
     write_nginx_config()
     write_supervisor_config()
