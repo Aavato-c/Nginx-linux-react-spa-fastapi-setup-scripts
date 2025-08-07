@@ -1,7 +1,23 @@
 import os
 
-from consts import API_ENTRY_POINT, GUNICORN_PROCESS_NAME, GUNICORN_PROCESS_WORKERS, GUNICORN_START_SCRIPT_PATH, LOG_LEVEL, NAME_OF_NGINX_UPSTREAM, NGINX_API_CONFIG_SAVE_PATH, NGINX_SPA_CONFIG_SAVE_PATH, SERVER_DOMAIN_TLD_API, SERVER_DOMAIN_TLD_SPA, SUPERVISOR_CONFIG_SAVE_PATH, SUPERVISOR_SERVER_PROCESS_NAME, UNIX_SOCKET_PATH, UVICORN_WORKER_CLASS, VPS_LOCATION_OF_API, VPS_LOCATION_OF_SPA, VPS_LOG_DIR, VPS_USER_NAME
-
+from consts import (API_ENTRY_POINT, 
+                    GUNICORN_PROCESS_NAME, 
+                    GUNICORN_PROCESS_WORKERS, 
+                    GUNICORN_START_SCRIPT_PATH, 
+                    LOG_LEVEL, 
+                    NAME_OF_NGINX_UPSTREAM, 
+                    NGINX_API_CONFIG_SAVE_PATH, 
+                    NGINX_SPA_CONFIG_SAVE_PATH, 
+                    SERVER_DOMAIN_TLD_API, 
+                    SERVER_DOMAIN_TLD_SPA, 
+                    SUPERVISOR_CONFIG_SAVE_PATH, 
+                    SUPERVISOR_SERVER_PROCESS_NAME, 
+                    UNIX_SOCKET_PATH, 
+                    UVICORN_WORKER_CLASS, 
+                    VPS_LOCATION_OF_API, 
+                    VPS_LOCATION_OF_SPA, 
+                    VPS_LOG_DIR, 
+                    VPS_USER_NAME)
 
 
 def write_nginx_config_for_react_router(

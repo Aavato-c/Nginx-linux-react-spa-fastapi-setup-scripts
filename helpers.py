@@ -41,7 +41,6 @@ def pythify_str(string: str) -> str:
         value = 'default-name'
     return value
 
-
 def is_envvar_truthy(envvar: str) -> bool:
     """
     Check if the environment variable is set to a truthy value.
