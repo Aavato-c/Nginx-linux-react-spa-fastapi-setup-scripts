@@ -1,4 +1,9 @@
 import os
+import sys
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__)).split("tools_and_utils")[0]
+sys.path.append(ROOT_DIR)
+
 import re
 import unicodedata
 

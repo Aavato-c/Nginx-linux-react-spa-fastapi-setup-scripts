@@ -1,8 +1,14 @@
-from typing import List, Optional
+import os
+import sys
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__)).split("tools_and_utils")[0]
+sys.path.append(ROOT_DIR)
+
+from typing import Optional
 import subprocess
 import paramiko
 
-from consts import (
+from tools_and_utils.consts import (
     APP_CONFIGS_FOLDER,
     DESTINATION_DIR,
     DESTINATION_DIR_FINAL_CONFIG, 

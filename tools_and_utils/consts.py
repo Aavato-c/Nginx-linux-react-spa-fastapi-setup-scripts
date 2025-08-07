@@ -1,14 +1,12 @@
-
-
 import os
+import sys
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__)).split("tools_and_utils")[0]
+sys.path.append(ROOT_DIR)
 
 import dotenv
 
-from helpers import is_envvar_truthy, pythify_str, raise_or_get_env_var
-
-
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-
+from tools_and_utils.helpers import is_envvar_truthy, pythify_str, raise_or_get_env_var
 if not os.path.exists(f"{ROOT_DIR}/.env.scripts"):
     raise FileNotFoundError(f".env.scripts file not found in {ROOT_DIR}. Please create it with the required environment variables.")
 
@@ -65,7 +63,7 @@ API_ENTRY_POINT = raise_or_get_env_var("API_ENTRY_POINT")
 VPS_LOCATION_OF_API = raise_or_get_env_var("VPS_LOCATION_OF_API")
 VPS_LOCATION_OF_SPA = raise_or_get_env_var("VPS_LOCATION_OF_SPA")
 
-NAME_OF_NGINX_UPSTREAM = f"{GUNICORN_PROCESS_NAME}-upstream"
+NAME_OF_NGINX_UPSTREAM = f"{GUNICORN_PROCESS_NAME.replace('-', '_')}_upstream"
 UNIX_SOCKET_PATH = f"/tmp/{NAME_OF_NGINX_UPSTREAM}.sock"
 
 DESTINATION_DIR = raise_or_get_env_var("SCRIPTS_DESTINATION_ROOT_DIR_ON_VPS")

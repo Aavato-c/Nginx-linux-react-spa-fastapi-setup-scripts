@@ -1,6 +1,9 @@
 import os
+import sys
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__)).split("tools_and_utils")[0]
+sys.path.append(ROOT_DIR)
 
-from consts import (API_ENTRY_POINT, 
+from tools_and_utils.consts import (API_ENTRY_POINT, 
                     GUNICORN_PROCESS_NAME, 
                     GUNICORN_PROCESS_WORKERS, 
                     GUNICORN_START_SCRIPT_PATH, 
