@@ -3,7 +3,6 @@ import os
 import random
 import string
 import sys
-from xml.etree.ElementTree import QName
 import dotenv
 
 import logging
