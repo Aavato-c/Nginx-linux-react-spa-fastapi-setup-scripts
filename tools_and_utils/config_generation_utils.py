@@ -6,10 +6,10 @@ sys.path.append(ROOT_DIR)
 from tools_and_utils.consts import CONFIG
 
 def write_nginx_config_for_react_router(
-    log_dir: str = path_server_log_dir,
-    save_path: str = filepath_local_nginx_spa_config,
-    server_domain_tld: str = SERVER_DOMAIN_TLD_SPA,
-    dir_of_spa: str = VPS_LOCATION_OF_SPA  # e.g., "/usr/share/nginx/frontend-app" or "/var/www/html"
+    log_dir: str = CONFIG.path_server_log_dir,
+    save_path: str = CONFIG.filepath_local_nginx_spa_config,
+    server_domain_tld: str = CONFIG.server_domain_tld_api,
+    dir_of_spa: str = CONFIG.vps_location_of_spa  # e.g., "/usr/share/nginx/frontend-app" or "/var/www/html"
     ):
     
     nginx_config= f"""\
@@ -33,11 +33,11 @@ server {{
 
 
 def write_nginx_config(
-        nginx_upstream_name: str = NAME_OF_NGINX_UPSTREAM, 
-        nginx_socket_path: str = UNIX_SOCKET_PATH,
-        server_domain_tld: str = SERVER_DOMAIN_TLD_API,
-        log_dir_name: str = path_server_log_dir,
-        save_path: str = filepath_local_nginx_api_config
+        nginx_upstream_name: str = CONFIG.name_of_nginx_upstream, 
+        nginx_socket_path: str = CONFIG.unix_socket_path,
+        server_domain_tld: str = CONFIG.server_domain_tld_api,
+        log_dir_name: str = CONFIG.path_server_log_dir,
+        save_path: str = CONFIG.filepath_local_nginx_api_config
         ):
     nginx_config = f"""\
 upstream {nginx_upstream_name} {{
@@ -209,12 +209,20 @@ sudo supervisorctl status $NAME_OF_SERVER_PROGRAM
 """
     with open(save_path, "w") as f:
         f.write(startup_script)
-    
-        
-if __name__ == "__main__":
+
+
+def generate_all_configs():
+    write_nginx_config_for_react_router()
     write_nginx_config()
     write_supervisor_config()
     write_gunicorn_start_script()
-    write_nginx_config_for_react_router()
+    create_server_init_script()
+    create_server_app_initiation_script()
+    chmod_to_executable(CONFIG.filepath_local_gunicorn_start_script)
+    chmod_to_executable(CONFIG.filepath_local_server_init_script)
+    chmod_to_executable(CONFIG.filepath_local_server_startup_script)
+        
+if __name__ == "__main__":
+    generate_all_configs()
     print("Configuration files have been written successfully.")
     
