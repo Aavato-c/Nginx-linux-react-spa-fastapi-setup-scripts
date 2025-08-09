@@ -2,13 +2,12 @@ import os
 from typing import Optional
 from pydantic import BaseModel, Field
 
-from tools_and_utils.helpers import is_envvar_truthy, pythify_str
+from tools_and_utils.helpers import pythify_str
 
 
 
 class SyncConfig(BaseModel):
     def __init__(self, **data):
-        self.deletable_properties = set()
         super().__init__(**data)
         _pass = None
         if self.vps_user_needs_password:
@@ -16,6 +15,14 @@ class SyncConfig(BaseModel):
             self.ssh_command_prefix = f"echo '{_pass}' | sudo -S "
         else:
             self.ssh_command_prefix = "sudo "
+
+        self.deletable_properties_local = [
+            self.path_local_app_config_folder,
+        ]
+
+        self.deletable_properties_server = [
+            self.vps_dir_app_configs,
+        ]
 
     vps_ip: Optional[str] = Field(None, description="IP address of the VPS")
     vps_port: Optional[int] = Field(None, description="Port number for the VPS")
@@ -48,13 +55,7 @@ class SyncConfig(BaseModel):
     log_level: Optional[str] = Field(default="info", description="Logging level for the application")
 
         
-    def deletable_property(self, func):
-        """
-        Decorator to mark a property as deletable.
-        """
-        deltable = func.__name__
-        self.deletable_properties.add(deltable)
-        return func
+
 
     @property
     def path_server_log_dir(self) -> str:
@@ -85,12 +86,10 @@ class SyncConfig(BaseModel):
     def basename_supervisor_config(self) -> str:
         return f"{self.app_name_pythified_underscore}_supervisor_config.conf"
 
-    @deletable_property
     @property
     def filepath_local_supervisor_config(self) -> str:
         return os.path.join(self.path_local_app_config_folder, self.basename_supervisor_config)
-    
-    
+        
 
     @property
     def filepath_local_nginx_api_config(self) -> str:
@@ -108,7 +107,6 @@ class SyncConfig(BaseModel):
     def name_of_nginx_upstream(self) -> str:
         return f"{self.name_server_gunicorn_process}_upstream"
 
-    @deletable_property
     @property
     def unix_socket_path(self) -> str:
         return f"/tmp/{self.name_of_nginx_upstream}.sock"
@@ -141,7 +139,6 @@ class SyncConfig(BaseModel):
             self.path_local_app_config_folder,
         ]
 
-    @deletable_property
     @property
     def filepath_server_supervisor_linked(self) -> str:
         return f"/etc/supervisor/conf.d/{self.app_name}-supervisor-config.conf"
@@ -153,4 +150,6 @@ class SyncConfig(BaseModel):
     @property
     def filepath_local_server_startup_script(self) -> str:
         return self.path_local_app_config_folder + "/server_startup.sh"
+    
+
 
